@@ -1,26 +1,63 @@
 import React from 'react';
 import logo from './logo.svg';
+import axios from 'axios';
 import './App.css';
 
+export const dataReducer = (state, action) => {
+  if (action.type === 'SET_ERROR') {
+    return { ...state, list: [], error: true };
+  }
+  if (action.type === 'SET_LIST') {
+    return { ...state, list: action.list, error: null };
+  }
+  throw new Error();
+};
+const initialData = {
+  list: [],
+  error: null,
+};
+
 function App() {
+  const [counter, setCounter] = React.useState(0);
+  const [data, dispatch] = React.useReducer(dataReducer, initialData);
+
+  React.useEffect(() => {
+    axios
+      .get('http://hn.algolia.com/api/v1/search?query=react')
+      .then(response => {
+        dispatch({ type: 'SET_LIST', list: response.data.hits });
+      })
+      .catch(() => {
+        dispatch({ type: 'SET_ERROR' });
+      });
+  }, []);
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+     <h1>My Counter</h1>
+      <Counter counter={counter} />
+      <button type="button" onClick={() => setCounter(counter + 1)}>
+        Increment
+      </button>
+      <button type="button" onClick={() => setCounter(counter - 1)}>
+        Decrement
+      </button>
+      <h2>My Async Data</h2>
+      {data.error && <div className="error">Error</div>}
+      <ul>
+        {data.list.map(item => (
+          <li key={item.objectID}>{item.title}</li>
+        ))}
+      </ul>
     </div>
   );
 }
+
+export const Counter = ({ counter }) => (
+  <div>
+    <p>{counter}</p>
+  </div>
+);
+
 
 export default App;
